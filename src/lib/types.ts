@@ -12,7 +12,10 @@ export interface Category {
   color: string;
   /** Optional monthly spending limit for expense categories. */
   monthlyBudget?: number;
-  /** Money put aside rather than spent; reported as savings. */
+  /**
+   * Savings transfer rather than real spending or income: an expense in such a
+   * category moves money to savings, an income moves it back to the account.
+   */
   isSavings?: boolean;
 }
 
@@ -31,6 +34,9 @@ export interface Settings {
   currency: string;
   /** Account balance before the first transaction in the app. */
   startingBalance: number;
+  /** Savings held before the first transfer in the app. */
+  startingSavings: number;
+  savingsGoal?: number;
   setupDone: boolean;
 }
 

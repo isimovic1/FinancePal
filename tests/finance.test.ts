@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { balance, budgetStatus, formatMoney, monthReport, parseAmount } from '../src/lib/finance';
-import { EMPTY_STATE, reducer } from '../src/lib/store';
+import { balance, budgetStatus, formatMoney, monthReport, parseAmount, savingsBalance, savingsByMonth } from '../src/lib/finance';
+import { EMPTY_STATE, migrate, reducer } from '../src/lib/store';
 import type { AppState, Transaction } from '../src/lib/types';
 
 let n = 0;
@@ -12,7 +12,7 @@ const tx = (type: Transaction['type'], amount: number, categoryId: string, date:
 
 const state: AppState = {
   ...EMPTY_STATE,
-  settings: { currency: '€', startingBalance: 500, setupDone: true },
+  settings: { currency: '€', startingBalance: 500, startingSavings: 1000, setupDone: true },
   categories: EMPTY_STATE.categories.map((c) => (c.id === 'food' ? { ...c, monthlyBudget: 300 } : c)),
   transactions: [
     tx('income', 1800, 'salary', '2026-09-10'),
@@ -80,4 +80,36 @@ test('saving a transaction keeps the list newest first and replaces edits', () =
   s = reducer(s, { type: 'saveTransaction', tx: { ...s.transactions[1], amount: 15 } });
   assert.equal(s.transactions.length, 2);
   assert.equal(s.transactions[1].amount, 15);
+});
+
+test('savings transfers move money between account and savings', () => {
+  const s: AppState = {
+    ...state,
+    transactions: [...state.transactions, tx('income', 50, 'savings-withdrawal', '2026-10-16')],
+  };
+  // 1000 starting + 200 deposited - 50 withdrawn
+  assert.equal(savingsBalance(s), 1150);
+  assert.equal(balance(s), balance(state) + 50);
+  const r = monthReport(s, '2026-10-17', '2026-10-17');
+  assert.equal(r.income, 2000); // the withdrawal is not income
+  assert.equal(r.savings, 200);
+  assert.equal(r.savingsWithdrawn, 50);
+  assert.equal(r.net, 2000 + 50 - 720.5);
+  assert.ok(!r.incomeByCategory.some((c) => c.category.id === 'savings-withdrawal'));
+  assert.ok(!r.biggestExpenses.some((t) => t.categoryId === 'savings'));
+  assert.ok(!r.expenseByCategory.some((c) => c.category.id === 'savings'));
+});
+
+test('savingsByMonth reports month-end balances oldest first', () => {
+  const m = savingsByMonth(state, '2026-10-17', 3);
+  assert.deepEqual(m.map((x) => x.month), ['2026-08-01', '2026-09-01', '2026-10-01']);
+  assert.deepEqual(m.map((x) => x.balance), [1000, 1000, 1200]);
+});
+
+test('migrate adds missing savings categories and settings', () => {
+  const old = { settings: { currency: '€', startingBalance: 10, setupDone: true }, categories: [], transactions: [] };
+  const s = migrate(old as never);
+  assert.equal(s.settings.startingSavings, 0);
+  assert.ok(s.categories.some((c) => c.id === 'savings'));
+  assert.ok(s.categories.some((c) => c.id === 'savings-withdrawal' && c.type === 'income'));
 });

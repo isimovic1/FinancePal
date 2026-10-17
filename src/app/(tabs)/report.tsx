@@ -28,6 +28,9 @@ export default function Report() {
         <Line label="Prihodi" value={money(r.income)} color={colors.income} />
         <Line label="Troškovi (bez štednje)" value={money(-r.spending)} color={colors.expense} />
         <Line label="Uplaćeno u štednju" value={money(-r.savings)} color={colors.savings} />
+        {r.savingsWithdrawn > 0 && (
+          <Line label="Povučeno sa štednje" value={money(r.savingsWithdrawn, true)} color={colors.savings} />
+        )}
         <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 4 }} />
         <Line label="Razlika u mjesecu" value={money(r.net, true)} color={r.net >= 0 ? colors.income : colors.expense} bold />
         <Line label="Stanje na početku mjeseca" value={money(r.openingBalance)} />
@@ -49,7 +52,7 @@ export default function Report() {
           <View style={{ alignItems: 'center', marginVertical: spacing.sm }}>
             <Donut segments={r.expenseByCategory.map((c) => ({ value: c.total, color: c.category.color }))}>
               <Text style={styles.muted}>Ukupno</Text>
-              <Text style={{ fontSize: 17, fontWeight: '800', color: colors.text }}>{money(r.expenses)}</Text>
+              <Text style={{ fontSize: 17, fontWeight: '800', color: colors.text }}>{money(r.spending)}</Text>
             </Donut>
           </View>
           {r.expenseByCategory.map((c) => {

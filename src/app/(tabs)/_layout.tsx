@@ -21,6 +21,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" options={{ title: 'Pregled', tabBarIcon: icon('wallet-outline') }} />
       <Tabs.Screen name="transactions" options={{ title: 'Transakcije', tabBarIcon: icon('list-outline') }} />
+      <Tabs.Screen name="savings" options={{ title: 'Štednja', tabBarIcon: icon('trending-up-outline') }} />
       <Tabs.Screen name="report" options={{ title: 'Izvještaj', tabBarIcon: icon('pie-chart-outline') }} />
       <Tabs.Screen name="settings" options={{ title: 'Postavke', tabBarIcon: icon('settings-outline') }} />
     </Tabs>

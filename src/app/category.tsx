@@ -5,7 +5,7 @@ import { Alert, Pressable, Switch, Text, View } from 'react-native';
 
 import { CategoryIcon } from '../components/TransactionRow';
 import { Button, Card, Field, Row, Screen, Segmented, styles } from '../components/ui';
-import { CATEGORY_COLORS, CATEGORY_ICONS } from '../lib/categories';
+import { CATEGORY_COLORS, CATEGORY_ICONS, SAVINGS_DEPOSIT_ID, SAVINGS_WITHDRAWAL_ID } from '../lib/categories';
 import { parseAmount } from '../lib/finance';
 import { newId, useStore } from '../lib/store';
 import type { Category, TxType } from '../lib/types';
@@ -43,6 +43,9 @@ export default function CategoryScreen() {
   };
 
   const remove = () => {
+    if (existing!.id === SAVINGS_DEPOSIT_ID || existing!.id === SAVINGS_WITHDRAWAL_ID) {
+      return Alert.alert('Nije moguće', 'Ova kategorija je potrebna za praćenje štednje.');
+    }
     const fallback = state.categories.find((c) => c.type === existing!.type && c.id !== existing!.id && c.id.startsWith('other'))
       ?? state.categories.find((c) => c.type === existing!.type && c.id !== existing!.id);
     if (!fallback) return Alert.alert('Nije moguće', 'Mora ostati barem jedna kategorija.');

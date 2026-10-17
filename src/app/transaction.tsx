@@ -20,7 +20,11 @@ export default function TransactionScreen() {
   const [amount, setAmount] = useState(existing ? existing.amount.toFixed(2).replace('.', ',') : '');
   const [date, setDate] = useState(existing?.date ?? todayKey());
   const [note, setNote] = useState(existing?.note ?? '');
-  const categories = state.categories.filter((c) => c.type === type);
+  // Savings transfers are made on the Savings tab; only show those categories
+  // here when editing a transfer that already uses one.
+  const categories = state.categories.filter(
+    (c) => c.type === type && (!c.isSavings || c.id === existing?.categoryId),
+  );
   const defaultCategory = (t: TxType) => (t === 'income' ? 'salary' : undefined);
   const [categoryId, setCategoryId] = useState<string | undefined>(existing?.categoryId ?? defaultCategory(type));
 

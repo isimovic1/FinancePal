@@ -1,4 +1,4 @@
-import { addDays, dateRange, endOfMonth, startOfMonth } from './dates';
+import { addDays, addMonths, dateRange, endOfMonth, startOfMonth } from './dates';
 import type { AppState, Category, DateKey, Transaction } from './types';
 
 export const CURRENCIES = [
@@ -62,13 +62,17 @@ const UNKNOWN_CATEGORY = (id: string, type: 'income' | 'expense'): Category => (
 export interface MonthReport {
   start: DateKey;
   end: DateKey;
+  /** Real income, without withdrawals from savings. */
   income: number;
   /** All expenses, savings included. */
   expenses: number;
   /** Money moved to savings categories. */
   savings: number;
+  /** Money moved back from savings to the account. */
+  savingsWithdrawn: number;
   /** Expenses without savings. */
   spending: number;
+  /** Change of the account balance over the month. */
   net: number;
   /** (income - spending) / income: share of income not spent. */
   savingsRate: number | null;
@@ -91,9 +95,12 @@ export function monthReport(state: AppState, anyDayInMonth: DateKey, today: Date
   let income = 0;
   let expenses = 0;
   let savings = 0;
+  let savingsWithdrawn = 0;
   for (const t of txs) {
-    if (t.type === 'income') income += t.amount;
-    else {
+    if (t.type === 'income') {
+      if (savingsIds.has(t.categoryId)) savingsWithdrawn += t.amount;
+      else income += t.amount;
+    } else {
       expenses += t.amount;
       if (savingsIds.has(t.categoryId)) savings += t.amount;
     }
@@ -115,21 +122,55 @@ export function monthReport(state: AppState, anyDayInMonth: DateKey, today: Date
     income,
     expenses,
     savings,
+    savingsWithdrawn,
     spending,
-    net: income - expenses,
+    net: income + savingsWithdrawn - expenses,
     savingsRate: income > 0 ? (income - spending) / income : null,
     openingBalance: balance(state, addDays(start, -1)),
     closingBalance: balance(state, end),
-    expenseByCategory: totalsByCategory(txs, state.categories, 'expense'),
-    incomeByCategory: totalsByCategory(txs, state.categories, 'income'),
+    // Savings transfers are not spending, so they stay out of the category split.
+    expenseByCategory: totalsByCategory(
+      txs.filter((t) => !savingsIds.has(t.categoryId)),
+      state.categories,
+      'expense',
+    ),
+    incomeByCategory: totalsByCategory(
+      txs.filter((t) => !savingsIds.has(t.categoryId)),
+      state.categories,
+      'income',
+    ),
     dailySpending,
     avgDailySpending: days.length ? spending / days.length : 0,
     biggestExpenses: txs
-      .filter((t) => t.type === 'expense')
+      .filter((t) => t.type === 'expense' && !savingsIds.has(t.categoryId))
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 5),
     transactionCount: txs.length,
   };
+}
+
+export function isSavingsTransaction(state: AppState, t: Transaction): boolean {
+  return state.categories.some((c) => c.id === t.categoryId && c.isSavings);
+}
+
+/** Money on savings after every transfer up to and including the date. */
+export function savingsBalance(state: AppState, upTo?: DateKey): number {
+  let total = state.settings.startingSavings;
+  for (const t of state.transactions) {
+    if ((!upTo || t.date <= upTo) && isSavingsTransaction(state, t)) total -= signed(t);
+  }
+  return total;
+}
+
+/** Savings balance at the end of each of the last `count` months, oldest first. */
+export function savingsByMonth(state: AppState, today: DateKey, count: number) {
+  const out: { month: DateKey; balance: number }[] = [];
+  for (let i = count - 1; i >= 0; i--) {
+    const month = startOfMonth(addMonths(today, -i));
+    const end = endOfMonth(month);
+    out.push({ month, balance: savingsBalance(state, end < today ? end : today) });
+  }
+  return out;
 }
 
 /** Spent this month in a category against its monthly budget. */

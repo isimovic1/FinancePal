@@ -11,11 +11,14 @@ export default function Welcome() {
   const { updateSettings } = useStore();
   const [currency, setCurrency] = useState('€');
   const [balance, setBalance] = useState('');
+  const [savings, setSavings] = useState('');
 
   const start = () => {
     const value = balance.trim() ? parseAmount(balance) : 0;
     if (!Number.isFinite(value)) return Alert.alert('Stanje', 'Unesi ispravan iznos, npr. 1250,50.');
-    updateSettings({ currency, startingBalance: value, setupDone: true });
+    const savedValue = savings.trim() ? parseAmount(savings) : 0;
+    if (!(savedValue >= 0)) return Alert.alert('Štednja', 'Unesi ispravan iznos štednje.');
+    updateSettings({ currency, startingBalance: value, startingSavings: savedValue, setupDone: true });
   };
 
   return (
@@ -32,7 +35,8 @@ export default function Welcome() {
         </Card>
         <Card title="Trenutno stanje računa">
           <Field label="Koliko imaš sada" suffix={currency} value={balance} onChangeText={setBalance} keyboardType="decimal-pad" placeholder="0,00" />
-          <Text style={styles.muted}>Od ovog iznosa kreće praćenje. Može se kasnije promijeniti u postavkama.</Text>
+          <Field label="Koliko već imaš na štednji" suffix={currency} value={savings} onChangeText={setSavings} keyboardType="decimal-pad" placeholder="0,00" />
+          <Text style={styles.muted}>Od ovih iznosa kreće praćenje. Mogu se kasnije promijeniti u postavkama.</Text>
         </Card>
         <Button title="Započni" onPress={start} />
       </ScrollView>

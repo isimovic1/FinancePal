@@ -5,7 +5,7 @@ import { Pressable, Text, View } from 'react-native';
 import { CategoryIcon, TransactionRow } from '../../components/TransactionRow';
 import { Card, ProgressBar, Row, Screen, styles } from '../../components/ui';
 import { monthName, todayKey } from '../../lib/dates';
-import { balance, budgetStatus, formatMoney, monthReport } from '../../lib/finance';
+import { balance, budgetStatus, formatMoney, monthReport, savingsBalance } from '../../lib/finance';
 import { useStore } from '../../lib/store';
 import { colors, spacing } from '../../theme';
 
@@ -15,6 +15,7 @@ export default function Overview() {
   const cur = state.settings.currency;
   const money = (n: number, sign = false) => formatMoney(n, cur, { sign });
   const total = balance(state);
+  const saved = savingsBalance(state);
   const month = monthReport(state, today, today);
   const budgeted = state.categories.filter((c) => c.type === 'expense' && c.monthlyBudget);
 
@@ -26,6 +27,9 @@ export default function Overview() {
         <Text style={{ color: '#ffffffcc' }}>
           {monthName(today)}: {money(month.net, true)}
         </Text>
+        <Pressable onPress={() => router.push('/savings')}>
+          <Text style={{ color: '#fff', fontWeight: '600', marginTop: spacing.xs }}>Na štednji: {money(saved)} ›</Text>
+        </Pressable>
       </View>
 
       <Row>
@@ -39,7 +43,7 @@ export default function Overview() {
           <Amount label="Potrošeno" value={money(month.spending)} color={colors.expense} />
         </Row>
         <Row>
-          <Amount label="Ušteđeno" value={money(month.savings)} color={colors.savings} />
+          <Amount label="Na štednju" value={money(month.savings - month.savingsWithdrawn, true)} color={colors.savings} />
           <Amount label="Prosječno dnevno" value={money(month.avgDailySpending)} />
         </Row>
         {month.income > 0 && (

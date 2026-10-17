@@ -1,5 +1,10 @@
 import type { Category } from './types';
 
+/** Category of transfers into savings (an expense for the main account). */
+export const SAVINGS_DEPOSIT_ID = 'savings';
+/** Category of withdrawals from savings back to the main account. */
+export const SAVINGS_WITHDRAWAL_ID = 'savings-withdrawal';
+
 export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'housing', name: 'Kuća i režije', type: 'expense', icon: 'home-outline', color: '#1C7EF2' },
   { id: 'food', name: 'Hrana', type: 'expense', icon: 'cart-outline', color: '#22A86B' },
@@ -9,11 +14,12 @@ export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'health', name: 'Zdravlje', type: 'expense', icon: 'medkit-outline', color: '#E5484D' },
   { id: 'clothes', name: 'Odjeća', type: 'expense', icon: 'shirt-outline', color: '#EC4899' },
   { id: 'subscriptions', name: 'Pretplate', type: 'expense', icon: 'repeat-outline', color: '#0EA5E9' },
-  { id: 'savings', name: 'Štednja', type: 'expense', icon: 'wallet-outline', color: '#14B8A6', isSavings: true },
+  { id: SAVINGS_DEPOSIT_ID, name: 'Štednja', type: 'expense', icon: 'wallet-outline', color: '#14B8A6', isSavings: true },
   { id: 'other-expense', name: 'Ostalo', type: 'expense', icon: 'ellipsis-horizontal-circle-outline', color: '#6B7686' },
   { id: 'salary', name: 'Plaća', type: 'income', icon: 'briefcase-outline', color: '#22A86B' },
   { id: 'extra', name: 'Dodatni prihod', type: 'income', icon: 'cash-outline', color: '#0EA5E9' },
   { id: 'other-income', name: 'Ostali prihodi', type: 'income', icon: 'add-circle-outline', color: '#6B7686' },
+  { id: SAVINGS_WITHDRAWAL_ID, name: 'Iz štednje', type: 'income', icon: 'wallet-outline', color: '#14B8A6', isSavings: true },
 ];
 
 /** Choices offered when the user creates a category. */

@@ -14,13 +14,16 @@ export default function Settings() {
   const { state, updateSettings, reset } = useStore();
   const { settings } = state;
   const [startText, setStartText] = useState(settings.startingBalance.toFixed(2).replace('.', ','));
+  const [savingsText, setSavingsText] = useState(settings.startingSavings.toFixed(2).replace('.', ','));
   const [type, setType] = useState<TxType>('expense');
 
   const saveStart = () => {
     const v = parseAmount(startText);
     if (!Number.isFinite(v)) return Alert.alert('Iznos', 'Unesi ispravan iznos.');
-    updateSettings({ startingBalance: v });
-    Alert.alert('Spremljeno', `Početno stanje: ${formatMoney(v, settings.currency)}`);
+    const s = parseAmount(savingsText);
+    if (!Number.isFinite(s) || s < 0) return Alert.alert('Iznos', 'Unesi ispravan iznos štednje.');
+    updateSettings({ startingBalance: v, startingSavings: s });
+    Alert.alert('Spremljeno', `Račun: ${formatMoney(v, settings.currency)}\nŠtednja: ${formatMoney(s, settings.currency)}`);
   };
 
   return (
@@ -34,8 +37,9 @@ export default function Settings() {
       </Card>
 
       <Card title="Početno stanje">
-        <Field label="Stanje prije prve transakcije" suffix={settings.currency} value={startText} onChangeText={setStartText} keyboardType="decimal-pad" />
-        <Text style={styles.muted}>Promijeni ako stanje u aplikaciji ne odgovara stanju na računu.</Text>
+        <Field label="Račun prije prve transakcije" suffix={settings.currency} value={startText} onChangeText={setStartText} keyboardType="decimal-pad" />
+        <Field label="Štednja prije prvog prebacivanja" suffix={settings.currency} value={savingsText} onChangeText={setSavingsText} keyboardType="decimal-pad" />
+        <Text style={styles.muted}>Promijeni ako stanje u aplikaciji ne odgovara stanju na računu ili štednji.</Text>
         <Button title="Spremi" variant="secondary" onPress={saveStart} />
       </Card>
 

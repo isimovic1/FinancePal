@@ -1,13 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, ReactNode, useContext, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 
-import { DEFAULT_CATEGORIES } from './categories';
+import { DEFAULT_CATEGORIES, SAVINGS_DEPOSIT_ID, SAVINGS_WITHDRAWAL_ID } from './categories';
 import type { AppState, Category, Settings, Transaction } from './types';
 
 const STORAGE_KEY = 'financepal:state:v1';
 
 export const EMPTY_STATE: AppState = {
-  settings: { currency: '€', startingBalance: 0, setupDone: false },
+  settings: { currency: '€', startingBalance: 0, startingSavings: 0, setupDone: false },
   categories: DEFAULT_CATEGORIES,
   transactions: [],
 };
@@ -61,6 +61,22 @@ export function reducer(state: AppState, action: Action): AppState {
   }
 }
 
+/** Fills in fields and categories added after the data was first saved. */
+export function migrate(saved: Partial<AppState>): AppState {
+  const categories = [...(saved.categories ?? EMPTY_STATE.categories)];
+  // Savings transfers need both savings categories, even if an older version
+  // of the app saved its category list without them.
+  for (const id of [SAVINGS_DEPOSIT_ID, SAVINGS_WITHDRAWAL_ID]) {
+    if (!categories.some((c) => c.id === id)) categories.push(DEFAULT_CATEGORIES.find((c) => c.id === id)!);
+  }
+  return {
+    ...EMPTY_STATE,
+    ...saved,
+    categories,
+    settings: { ...EMPTY_STATE.settings, ...saved.settings },
+  };
+}
+
 function useActions(dispatch: React.Dispatch<Action>) {
   return useMemo(
     () => ({
@@ -94,10 +110,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       .then((raw) => {
         if (!raw) return;
         const saved = JSON.parse(raw) as Partial<AppState>;
-        dispatch({
-          type: 'load',
-          state: { ...EMPTY_STATE, ...saved, settings: { ...EMPTY_STATE.settings, ...saved.settings } },
-        });
+        dispatch({ type: 'load', state: migrate(saved) });
       })
       .catch((e) => console.warn('Učitavanje podataka nije uspjelo', e))
       .finally(() => setReady(true));
